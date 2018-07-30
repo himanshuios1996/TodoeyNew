@@ -10,32 +10,25 @@ import UIKit
 
 class TodoListViewController: UITableViewController {
 
-    var itemArray=[Item]()
-    let defaults = UserDefaults.standard // an interface to user defaults database where you store key-value pairs peristently across launches
-                                         //of app
+    var itemArray = [Item]()
+    // let defaults = UserDefaults.standard // an interface to user defaults database where you store key-value pairs peristently across
+                                         //launches of app
+    let dataFilePath=FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
     
     
     override func viewDidLoad() {
         super.viewDidLoad()
        //  Do any additional setup after loading the view, typically from a nib.
         
-        if let items = defaults.array(forKey: "ToDoListArray") as? [Item]
+        print(dataFilePath)
         
-        {   itemArray = items
-         }
+//        if let items = defaults.array(forKey: "ToDoListArray") as? [Item]
+//
+//        {   itemArray = items
+//         }
     
-    let newItem=Item()
-        
-        newItem.title="Find mike"
-        itemArray.append(newItem)
-        
-        let newItem2=Item()
-        newItem2.title="Buy Eggos"
-        itemArray.append(newItem2)
-        
-        let newItem3=Item()
-        newItem3.title="Destroy demogorgon"
-        itemArray.append(newItem3)
+   
+        loadData()
         
     }
 
@@ -48,10 +41,10 @@ class TodoListViewController: UITableViewController {
        let cell=tableView.dequeueReusableCell(withIdentifier: "ToDoItemCell", for: indexPath)
        // let cell=UITableViewCell(style: .default, reuseIdentifier: "ToDoItemCell")
        
-         let item = itemarray[indexPath.row]   //renaming shortcut
+        let item = itemArray[indexPath.row]   //renaming shortcut
         cell.textLabel?.text=item.title
         
-        cell.accessoryType=item.done==true? .checkmark: .none
+        cell.accessoryType = item.done ? .checkmark: .none
         
        
         
@@ -72,10 +65,11 @@ class TodoListViewController: UITableViewController {
         //    tableView.cellForRow(at: indexPath)?.accessoryType = .checkmark
         // }
         
-     itemArray[indexPath.row].done=!itemArray[indexPath.row].done
+     itemArray[indexPath.row].done = !itemArray[indexPath.row].done
         
         
-        
+        tableView.reloadData()
+        saveItems()
         tableView.deselectRow(at: indexPath, animated: true)
     }
     
@@ -91,13 +85,17 @@ class TodoListViewController: UITableViewController {
             //what will happen when user clicks add item button
             
          //   print("Success!")
-            print(textField.text)
+          //  print(textField.text)
+            
             let newItem=Item()
             newItem.title=textField.text!
             
             self.itemArray.append(newItem)
-            self.defaults.set(self.itemArray, forKey: "ToDoListArray")
-            self.tableView.reloadData()   //reloading to show the contents
+          //  self.defaults.set(self.itemArray, forKey: "ToDoListArray")
+            
+            self.saveItems()
+            
+            
         }
         
         alert.addTextField { (alertTextField) in
@@ -113,8 +111,38 @@ class TodoListViewController: UITableViewController {
         
     }
     
+    //MARK- model Manipulation Methods
+    
+    func saveItems(){
+        let encoder=PropertyListEncoder()
+        do{
+            let data=try encoder.encode(itemArray)
+            try data.write(to:dataFilePath!)
+        }catch{
+            print("Error encoding item array,\(error)")
+        }
+        tableView.reloadData()
+    }   // Function saveItems closing
+    
+    
+    func loadData(){
+        
+        if let data=try? Data(contentsOf: dataFilePath!)
+        {  let decoder=PropertyListDecoder()
+        do{
+            itemArray=try decoder.decode([Item].self, from: data)
+        }catch{
+            print("Error decoding item array,\(error)")
+        }
+        
+        }
+        
+    }
+    
+}
+    
    
 
-}
+
 
 
